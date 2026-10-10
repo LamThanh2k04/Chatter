@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  VIDEO
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  name        String
+  email       String    @unique
+  password    String
+  phone       String    @unique
+  dateOfBirth DateTime?
+  avatar      String?
+  gender      Gender?
+  lastOnline  DateTime?
+  isActive    Boolean   @default(true)
+  role        Role      @default(USER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sentMessages        Message[]             @relation("SentMessages")
+  conservationMembers ConversationMember[]
+  favoriteMessage     FavoriteMessageUser[]
+
+  @@index([name])
+  @@index([email])
+  @@index([phone])
+}
+
+model Conversation {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  isGroup   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  members  ConversationMember[]
+  messages Message[]
+}
+
+model ConversationMember {
+  id             Int          @id @default(autoincrement())
+  conversationId Int
+  userId         Int
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id                  Int                   @id @default(autoincrement())
+  senderId            Int
+  conversationId      Int
+  messageType         MessageType           @default(TEXT)
+  content             String?
+  fileUrl             String?
+  createdAt           DateTime              @default(now())
+  sender              User                  @relation("SentMessages", fields: [senderId], references: [id])
+  conversation        Conversation          @relation(fields: [conversationId], references: [id])
+  FavoriteMessageUser FavoriteMessageUser[]
+
+  @@index([senderId])
+  @@index([conversationId])
+}
+
+model FavoriteMessageUser {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  messageId Int
+  user      User     @relation(fields: [userId], references: [id])
+  message   Message  @relation(fields: [messageId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, messageId])
+}
