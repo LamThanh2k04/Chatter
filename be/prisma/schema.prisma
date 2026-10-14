@@ -24,24 +24,33 @@ enum MessageType {
   VIDEO
 }
 
-model User {
-  id          Int       @id @default(autoincrement())
-  name        String
-  email       String    @unique
-  password    String
-  phone       String?    @unique
-  dateOfBirth DateTime?
-  avatar      String?
-  gender      Gender?
-  lastOnline  DateTime?
-  isActive    Boolean   @default(true)
-  role        Role      @default(USER)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+enum FriendStatusRequest {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
 
-  sentMessages        Message[]             @relation("SentMessages")
-  conservationMembers ConversationMember[]
-  favoriteMessage     FavoriteMessageUser[]
+model User {
+  id                   Int                   @id @default(autoincrement())
+  name                 String
+  email                String                @unique
+  password             String
+  phone                String?               @unique
+  dateOfBirth          DateTime?
+  avatar               String?
+  gender               Gender?
+  lastOnline           DateTime?
+  isActive             Boolean               @default(true)
+  role                 Role                  @default(USER)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  sentMessages         Message[]             @relation("SentMessages")
+  conservationMembers  ConversationMember[]
+  favoriteMessage      FavoriteMessageUser[]
+  sentFriendRequest    FriendRequest[]       @relation("SentFriendRequests")
+  receiveFriendRequest FriendRequest[]       @relation("ReceivedFriendRequests")
+  friendShips          FriendShip[]          @relation("UserFriendships")
+  friendOfUser         FriendShip[]          @relation("FriendOfUser")
 
   @@index([name])
   @@index([email])
@@ -49,13 +58,12 @@ model User {
 }
 
 model Conversation {
-  id        Int      @id @default(autoincrement())
+  id        Int                  @id @default(autoincrement())
   name      String?
-  isGroup   Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  members  ConversationMember[]
-  messages Message[]
+  isGroup   Boolean              @default(false)
+  createdAt DateTime             @default(now())
+  members   ConversationMember[]
+  messages  Message[]
 }
 
 model ConversationMember {
@@ -94,4 +102,29 @@ model FavoriteMessageUser {
   createdAt DateTime @default(now())
 
   @@unique([userId, messageId])
+}
+
+model FriendRequest {
+  id         Int                 @id @default(autoincrement())
+  senderId   Int
+  receiverId Int
+  status     FriendStatusRequest @default(PENDING)
+  sender     User                @relation("SentFriendRequests", fields: [senderId], references: [id])
+  receiver   User                @relation("ReceivedFriendRequests", fields: [receiverId], references: [id])
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@unique([receiverId, status])
+}
+
+model FriendShip {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  friendId  Int
+  user      User     @relation("UserFriendships", fields: [userId], references: [id])
+  friend    User     @relation("FriendOfUser", fields: [friendId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId])
 }
