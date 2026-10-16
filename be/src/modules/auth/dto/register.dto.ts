@@ -17,7 +17,7 @@ export class RegisterDto {
         example: 'nguyenvana@gmail.com',
         description: 'Email người dùng'
     })
-    @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
+    @Transform(({ value }) => typeof value === 'string' ? value.trim().toLowerCase() : value)
     @IsNotEmpty({ message: 'Email người dùng không được để trống' })
     @IsString({ message: 'Email người dùng phải là một chuỗi' })
     @IsEmail({}, { message: 'Email người dùng không hợp lệ' })
